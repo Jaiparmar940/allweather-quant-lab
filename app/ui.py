@@ -69,10 +69,22 @@ def main():
     # Sidebar
     with st.sidebar:
         st.title("Navigation")
+        
+        # Initialize page in session state
+        if 'current_page' not in st.session_state:
+            st.session_state.current_page = "Portfolio Optimization"
+        
         page = st.selectbox(
             "Select Page",
-            ["Portfolio Optimization", "Backtesting", "Regime Detection", "Policy Management", "Results", "Settings"]
+            ["Portfolio Optimization", "Backtesting", "Regime Detection", "Policy Management", "Results", "Settings"],
+            index=["Portfolio Optimization", "Backtesting", "Regime Detection", "Policy Management", "Results", "Settings"].index(st.session_state.current_page)
         )
+        
+        # Update session state when page changes
+        if page != st.session_state.current_page:
+            st.write(f"🔄 Page changed from {st.session_state.current_page} to {page}")
+            st.session_state.current_page = page
+            st.rerun()
     
     # Main content
     if page == "Portfolio Optimization":
@@ -322,6 +334,10 @@ def portfolio_optimization_page():
     if 'returns_df' not in st.session_state:
         st.session_state.returns_df = None
     
+    # Initialize session state for results
+    if 'optimization_results' not in st.session_state:
+        st.session_state.optimization_results = []
+    
     # Data input
     st.subheader("Data Input")
     
@@ -410,7 +426,8 @@ def portfolio_optimization_page():
     
     with col2:
         if st.button("Manage Policies"):
-            st.session_state.page = "Policy Management"
+            st.write("🔄 Navigating to Policy Management...")
+            st.session_state.current_page = "Policy Management"
             st.rerun()
     
     # Optimization parameters
@@ -490,6 +507,16 @@ def portfolio_optimization_page():
             if response.status_code == 200:
                 result = response.json()
                 
+                # Store results in session state
+                result_entry = {
+                    "timestamp": datetime.now().isoformat(),
+                    "type": "optimization",
+                    "objective": objective,
+                    "data": result,
+                    "policy": selected_policy_name if selected_policy_name != "Custom Settings" else None
+                }
+                st.session_state.optimization_results.append(result_entry)
+                
                 # Display results
                 st.success("Portfolio optimization completed successfully!")
                 
@@ -543,6 +570,10 @@ def backtesting_page():
     # Initialize session state for returns data
     if 'backtest_returns_df' not in st.session_state:
         st.session_state.backtest_returns_df = None
+    
+    # Initialize session state for backtest results
+    if 'backtest_results' not in st.session_state:
+        st.session_state.backtest_results = []
     
     # Data input (similar to optimization page)
     st.subheader("Data Input")
@@ -632,7 +663,8 @@ def backtesting_page():
     
     with col2:
         if st.button("Manage Policies", key="backtest_manage_policies"):
-            st.session_state.page = "Policy Management"
+            st.write("🔄 Navigating to Policy Management...")
+            st.session_state.current_page = "Policy Management"
             st.rerun()
     
     # Backtest parameters
@@ -688,6 +720,16 @@ def backtesting_page():
             
             if response.status_code == 200:
                 result = response.json()
+                
+                # Store results in session state
+                result_entry = {
+                    "timestamp": datetime.now().isoformat(),
+                    "type": "backtest",
+                    "objective": objective,
+                    "data": result,
+                    "policy": selected_policy_name if selected_policy_name != "Custom Settings" else None
+                }
+                st.session_state.backtest_results.append(result_entry)
                 
                 # Display results
                 st.success("Backtest completed successfully!")
@@ -914,10 +956,150 @@ def results_page():
     """Results page."""
     
     st.header("Results")
-    st.markdown("View and analyze portfolio optimization results.")
+    st.markdown("View and analyze portfolio optimization and backtesting results.")
     
-    # Placeholder for results
-    st.info("Results will be displayed here after running optimizations or backtests.")
+    # Initialize session state for results if not exists
+    if 'optimization_results' not in st.session_state:
+        st.session_state.optimization_results = []
+    if 'backtest_results' not in st.session_state:
+        st.session_state.backtest_results = []
+    
+    # Combine all results
+    all_results = st.session_state.optimization_results + st.session_state.backtest_results
+    
+    if not all_results:
+        st.info("No results available. Run some optimizations or backtests to see results here.")
+        return
+    
+    # Sort results by timestamp (newest first)
+    all_results.sort(key=lambda x: x['timestamp'], reverse=True)
+    
+    # Display results summary
+    st.subheader("Results Summary")
+    
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Total Optimizations", len(st.session_state.optimization_results))
+    with col2:
+        st.metric("Total Backtests", len(st.session_state.backtest_results))
+    with col3:
+        st.metric("Total Results", len(all_results))
+    
+    # Filter options
+    st.subheader("Filter Results")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        result_type = st.selectbox("Result Type", ["All", "Optimization", "Backtest"])
+    with col2:
+        objective_filter = st.selectbox("Objective", ["All", "GMV", "Omega"])
+    with col3:
+        policy_filter = st.selectbox("Policy", ["All"] + list(set([r.get('policy', 'Custom') for r in all_results if r.get('policy')])))
+    
+    # Filter results
+    filtered_results = all_results
+    
+    if result_type != "All":
+        filtered_results = [r for r in filtered_results if r['type'] == result_type.lower()]
+    
+    if objective_filter != "All":
+        filtered_results = [r for r in filtered_results if r['objective'] == objective_filter.lower()]
+    
+    if policy_filter != "All":
+        filtered_results = [r for r in filtered_results if r.get('policy') == policy_filter]
+    
+    # Display filtered results
+    st.subheader(f"Results ({len(filtered_results)} found)")
+    
+    for i, result in enumerate(filtered_results):
+        with st.expander(f"{result['type'].title()} - {result['timestamp'][:19]} - {result['objective'].upper()}"):
+            
+            if result['type'] == 'optimization':
+                display_optimization_result(result)
+            elif result['type'] == 'backtest':
+                display_backtest_result(result)
+    
+    # Clear results button
+    if st.button("Clear All Results", type="secondary"):
+        st.session_state.optimization_results = []
+        st.session_state.backtest_results = []
+        st.rerun()
+
+def display_optimization_result(result):
+    """Display optimization result details."""
+    
+    data = result['data']
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.write("**Optimization Details**")
+        st.write(f"Objective: {result['objective'].upper()}")
+        st.write(f"Status: {data.get('status', 'Unknown')}")
+        st.write(f"Solve Time: {data.get('solve_time', 0):.4f} seconds")
+        st.write(f"Objective Value: {data.get('objective_value', 0):.6f}")
+        if result.get('policy'):
+            st.write(f"Policy: {result['policy']}")
+    
+    with col2:
+        st.write("**Portfolio Weights**")
+        weights = data.get('weights', {})
+        for asset, weight in weights.items():
+            st.write(f"{asset}: {weight:.3f} ({weight*100:.1f}%)")
+    
+    # Portfolio allocation chart
+    if 'weights' in data and data['weights']:
+        weights = data['weights']
+        fig = go.Figure(data=[go.Pie(labels=list(weights.keys()), values=list(weights.values()))])
+        fig.update_layout(title="Portfolio Allocation")
+        st.plotly_chart(fig, use_container_width=True)
+
+def display_backtest_result(result):
+    """Display backtest result details."""
+    
+    data = result['data']
+    
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.metric("Total Return", f"{data.get('total_return', 0):.2%}")
+        st.metric("Annualized Return", f"{data.get('annualized_return', 0):.2%}")
+    
+    with col2:
+        st.metric("Volatility", f"{data.get('annualized_volatility', 0):.2%}")
+        st.metric("Sharpe Ratio", f"{data.get('sharpe_ratio', 0):.3f}")
+    
+    with col3:
+        st.metric("Max Drawdown", f"{data.get('max_drawdown', 0):.2%}")
+        st.metric("VaR (95%)", f"{data.get('var_95', 0):.2%}")
+    
+    with col4:
+        st.metric("CVaR (95%)", f"{data.get('cvar_95', 0):.2%}")
+        st.metric("Turnover", f"{data.get('annual_turnover', 0):.2%}")
+    
+    # Performance history chart
+    if 'performance_history' in data and data['performance_history']:
+        perf_data = data['performance_history']
+        if len(perf_data) > 0:
+            dates = [p['date'] for p in perf_data]
+            returns = [p['return'] for p in perf_data]
+            cumulative = [p['cumulative_return'] for p in perf_data]
+            
+            fig = make_subplots(rows=2, cols=1, subplot_titles=('Daily Returns', 'Cumulative Returns'))
+            
+            fig.add_trace(
+                go.Scatter(x=dates, y=returns, name='Daily Returns', line=dict(color='blue')),
+                row=1, col=1
+            )
+            
+            fig.add_trace(
+                go.Scatter(x=dates, y=cumulative, name='Cumulative Returns', line=dict(color='green')),
+                row=2, col=1
+            )
+            
+            fig.update_layout(height=600, title_text="Performance History")
+            st.plotly_chart(fig, use_container_width=True)
 
 def settings_page():
     """Settings page."""

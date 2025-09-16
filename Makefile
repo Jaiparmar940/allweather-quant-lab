@@ -1,6 +1,6 @@
 # Omega Portfolio Engine Makefile
 
-.PHONY: help install install-dev test lint format clean demo build run stop
+.PHONY: help install install-dev test lint format clean demo build run stop start
 
 # Default target
 help:
@@ -8,6 +8,7 @@ help:
 	@echo "============================================="
 	@echo "install      - Install the package"
 	@echo "install-dev  - Install with development dependencies"
+	@echo "start        - Start web application (API + UI)"
 	@echo "test         - Run tests"
 	@echo "lint         - Run linting"
 	@echo "format       - Format code"
@@ -24,6 +25,20 @@ install:
 install-dev:
 	pip install -e ".[api,ui]"
 	pre-commit install
+
+# Start web application
+start:
+	@echo "Starting Omega Portfolio Engine web application..."
+	@echo "API will be available at: http://localhost:8000"
+	@echo "Web UI will be available at: http://localhost:8501"
+	@echo "Press Ctrl+C to stop both services"
+	@echo ""
+	@echo "Starting API server in background..."
+	@python -m api.main &
+	@echo "Waiting for API to start..."
+	@sleep 3
+	@echo "Starting web UI..."
+	@streamlit run app/ui.py --server.port 8501 --server.address 0.0.0.0
 
 # Testing
 test:

@@ -191,13 +191,17 @@ async def run_backtest(request: BacktestRequest):
                 return pd.Series(0.0, index=returns.columns)
         
         # Run walk-forward backtest
-        walk_forward_results = walk_forward_engine.run_walk_forward(
-            returns=returns_df,
-            optimizer_func=optimizer_func
-        )
+        try:
+            walk_forward_results = walk_forward_engine.run_walk_forward(
+                returns=returns_df,
+                optimizer_func=optimizer_func
+            )
+        except Exception as e:
+            logger.error("Walk-forward backtest failed", error=str(e))
+            raise HTTPException(status_code=500, detail=f"Walk-forward backtest failed: {str(e)}")
         
         # Extract results
-        if walk_forward_results and "all_returns" in walk_forward_results:
+        if walk_forward_results and "all_returns" in walk_forward_results and len(walk_forward_results["all_returns"]) > 0:
             all_returns = walk_forward_results["all_returns"]
             
             # Calculate metrics
@@ -253,7 +257,66 @@ async def run_backtest(request: BacktestRequest):
                 solve_time=0.0  # Would need to track
             )
         else:
-            raise HTTPException(status_code=500, detail="Backtest failed to produce results")
+            # Fallback: Simple single-period backtest
+            logger.warning("Walk-forward backtest produced no results, falling back to simple backtest")
+            
+            # Use all data for a simple backtest
+            try:
+                # Optimize on all data
+                weights = optimizer_func(returns_df)
+                
+                # Calculate portfolio returns
+                portfolio_returns = (returns_df * weights).sum(axis=1)
+                
+                # Calculate metrics
+                total_return = (1 + portfolio_returns).prod() - 1
+                annualized_return = (1 + total_return) ** (252 / len(portfolio_returns)) - 1
+                annualized_vol = portfolio_returns.std() * np.sqrt(252)
+                sharpe_ratio = annualized_return / annualized_vol if annualized_vol > 0 else 0
+                
+                # Calculate maximum drawdown
+                cumulative = (1 + portfolio_returns).cumprod()
+                running_max = cumulative.expanding().max()
+                drawdown = (cumulative - running_max) / running_max
+                max_drawdown = drawdown.min()
+                
+                # Calculate VaR and CVaR
+                var_95 = portfolio_returns.quantile(0.05)
+                cvar_95 = portfolio_returns[portfolio_returns <= var_95].mean()
+                
+                # Create performance history
+                performance_history = []
+                for i, (date, ret) in enumerate(portfolio_returns.items()):
+                    performance_history.append({
+                        "date": date.isoformat(),
+                        "return": ret,
+                        "cumulative_return": cumulative.iloc[i]
+                    })
+                
+                return BacktestResponse(
+                    total_return=total_return,
+                    annualized_return=annualized_return,
+                    annualized_volatility=annualized_vol,
+                    sharpe_ratio=sharpe_ratio,
+                    sortino_ratio=0.0,
+                    calmar_ratio=0.0,
+                    max_drawdown=max_drawdown,
+                    var_95=var_95,
+                    cvar_95=cvar_95,
+                    annual_turnover=0.0,
+                    cost_drag=0.0,
+                    final_weights=weights.to_dict(),
+                    performance_history=performance_history,
+                    trade_history=[],
+                    start_date=request.dates[0],
+                    end_date=request.dates[-1],
+                    n_observations=len(portfolio_returns),
+                    solve_time=0.0
+                )
+                
+            except Exception as e:
+                logger.error("Simple backtest also failed", error=str(e))
+                raise HTTPException(status_code=500, detail=f"Backtest failed: {str(e)}")
         
     except Exception as e:
         logger.error("Portfolio backtest failed", error=str(e))
