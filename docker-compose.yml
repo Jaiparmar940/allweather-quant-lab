@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - FRED_API_KEY=${FRED_API_KEY}
+      - QUANDL_API_KEY=${QUANDL_API_KEY}
+      - MLFLOW_TRACKING_URI=sqlite:///mlruns/mlflow.db
+    volumes:
+      - ./data:/app/data
+      - ./results:/app/results
+      - ./mlruns:/app/mlruns
+    command: ["python", "-m", "api.main"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  ui:
+    build: .
+    ports:
+      - "8501:8501"
+    environment:
+      - API_BASE_URL=http://api:8000
+    volumes:
+      - ./data:/app/data
+      - ./results:/app/results
+    command: ["streamlit", "run", "app/ui.py", "--server.address=0.0.0.0"]
+    depends_on:
+      - api
+
+  mlflow:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - MLFLOW_TRACKING_URI=sqlite:///mlruns/mlflow.db
+    volumes:
+      - ./mlruns:/app/mlruns
+    command: ["mlflow", "server", "--host", "0.0.0.0", "--port", "5000"]
+    depends_on:
+      - api
