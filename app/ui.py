@@ -13,6 +13,8 @@ import json
 from datetime import datetime, timedelta
 import yfinance as yf
 import structlog
+import yaml
+import os
 
 # Setup logging
 import logging
@@ -69,7 +71,7 @@ def main():
         st.title("Navigation")
         page = st.selectbox(
             "Select Page",
-            ["Portfolio Optimization", "Backtesting", "Regime Detection", "Results", "Settings"]
+            ["Portfolio Optimization", "Backtesting", "Regime Detection", "Policy Management", "Results", "Settings"]
         )
     
     # Main content
@@ -79,10 +81,236 @@ def main():
         backtesting_page()
     elif page == "Regime Detection":
         regime_detection_page()
+    elif page == "Policy Management":
+        policy_management_page()
     elif page == "Results":
         results_page()
     elif page == "Settings":
         settings_page()
+
+def policy_management_page():
+    """Policy management page."""
+    
+    st.header("Policy Management")
+    st.markdown("Create custom investment policies or select from existing templates.")
+    
+    # Initialize session state for policies
+    if 'policies' not in st.session_state:
+        st.session_state.policies = {}
+    
+    # Load existing policies
+    load_existing_policies()
+    
+    # Tabs for different policy operations
+    tab1, tab2, tab3 = st.tabs(["Select Policy", "Create Policy", "Edit Policy"])
+    
+    with tab1:
+        st.subheader("Select Existing Policy")
+        
+        if st.session_state.policies:
+            policy_names = list(st.session_state.policies.keys())
+            selected_policy = st.selectbox("Choose a policy", policy_names)
+            
+            if selected_policy:
+                policy = st.session_state.policies[selected_policy]
+                
+                # Display policy details
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    st.write("**Client Profile**")
+                    st.json(policy.get('client_profile', {}))
+                    
+                    st.write("**Return Requirements**")
+                    st.json(policy.get('return_requirements', {}))
+                
+                with col2:
+                    st.write("**Risk Constraints**")
+                    st.json(policy.get('risk_constraints', {}))
+                    
+                    st.write("**Asset Constraints**")
+                    st.json(policy.get('asset_constraints', {}))
+                
+                # Apply policy button
+                if st.button("Apply This Policy"):
+                    st.session_state.selected_policy = policy
+                    st.success(f"Policy '{selected_policy}' applied successfully!")
+        else:
+            st.warning("No policies available. Create a new policy or load existing ones.")
+    
+    with tab2:
+        st.subheader("Create New Policy")
+        
+        with st.form("create_policy_form"):
+            policy_name = st.text_input("Policy Name", placeholder="e.g., My Custom Policy")
+            
+            # Client Profile
+            st.write("**Client Profile**")
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                risk_tolerance = st.selectbox("Risk Tolerance", ["low", "medium", "high"])
+                investment_horizon = st.selectbox("Investment Horizon", ["short_term", "medium_term", "long_term"])
+            
+            with col2:
+                liquidity_needs = st.selectbox("Liquidity Needs", ["low", "medium", "high"])
+                return_currency = st.selectbox("Return Currency", ["real", "nominal"])
+            
+            # Return Requirements
+            st.write("**Return Requirements**")
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                min_return = st.number_input("Minimum Acceptable Return (%)", value=2.0, min_value=0.0, max_value=20.0, step=0.1)
+                target_return = st.number_input("Target Return (%)", value=6.0, min_value=0.0, max_value=30.0, step=0.1)
+            
+            with col2:
+                min_return = min_return / 100
+                target_return = target_return / 100
+            
+            # Risk Constraints
+            st.write("**Risk Constraints**")
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                max_drawdown = st.number_input("Maximum Drawdown (%)", value=15.0, min_value=1.0, max_value=50.0, step=0.1) / 100
+                max_volatility = st.number_input("Maximum Volatility (%)", value=12.0, min_value=1.0, max_value=50.0, step=0.1) / 100
+            
+            with col2:
+                var_confidence = st.number_input("VaR Confidence Level", value=0.95, min_value=0.80, max_value=0.99, step=0.01)
+                cvar_confidence = st.number_input("CVaR Confidence Level", value=0.95, min_value=0.80, max_value=0.99, step=0.01)
+            
+            # Asset Constraints
+            st.write("**Asset Allocation Constraints**")
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                min_fixed_income = st.number_input("Min Fixed Income (%)", value=20.0, min_value=0.0, max_value=100.0, step=1.0) / 100
+                max_fixed_income = st.number_input("Max Fixed Income (%)", value=80.0, min_value=0.0, max_value=100.0, step=1.0) / 100
+                min_equity = st.number_input("Min Equity (%)", value=10.0, min_value=0.0, max_value=100.0, step=1.0) / 100
+            
+            with col2:
+                max_equity = st.number_input("Max Equity (%)", value=70.0, min_value=0.0, max_value=100.0, step=1.0) / 100
+                min_commodities = st.number_input("Min Commodities (%)", value=0.0, min_value=0.0, max_value=50.0, step=1.0) / 100
+                max_commodities = st.number_input("Max Commodities (%)", value=20.0, min_value=0.0, max_value=50.0, step=1.0) / 100
+            
+            # Additional constraints
+            st.write("**Additional Constraints**")
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                max_single_weight = st.number_input("Max Single Asset Weight (%)", value=20.0, min_value=1.0, max_value=100.0, step=1.0) / 100
+                max_sector_weight = st.number_input("Max Sector Weight (%)", value=40.0, min_value=1.0, max_value=100.0, step=1.0) / 100
+            
+            with col2:
+                max_leverage = st.number_input("Max Leverage", value=1.0, min_value=0.0, max_value=3.0, step=0.1)
+                turnover_tolerance = st.number_input("Turnover Tolerance (%)", value=50.0, min_value=0.0, max_value=200.0, step=5.0) / 100
+            
+            # Submit button
+            submitted = st.form_submit_button("Create Policy")
+            
+            if submitted:
+                if not policy_name:
+                    st.error("Please enter a policy name.")
+                else:
+                    # Create policy dictionary
+                    policy = {
+                        "client_profile": {
+                            "name": policy_name,
+                            "risk_tolerance": risk_tolerance,
+                            "investment_horizon": investment_horizon,
+                            "liquidity_needs": liquidity_needs
+                        },
+                        "return_requirements": {
+                            "minimum_acceptable_return": min_return,
+                            "target_return": target_return,
+                            "return_currency": return_currency
+                        },
+                        "risk_constraints": {
+                            "max_drawdown": max_drawdown,
+                            "max_volatility": max_volatility,
+                            "var_confidence": var_confidence,
+                            "cvar_confidence": cvar_confidence
+                        },
+                        "asset_constraints": {
+                            "min_fixed_income": min_fixed_income,
+                            "max_fixed_income": max_fixed_income,
+                            "min_equity": min_equity,
+                            "max_equity": max_equity,
+                            "min_commodities": min_commodities,
+                            "max_commodities": max_commodities
+                        },
+                        "additional_constraints": {
+                            "max_single_weight": max_single_weight,
+                            "max_sector_weight": max_sector_weight,
+                            "max_leverage": max_leverage,
+                            "turnover_tolerance": turnover_tolerance
+                        }
+                    }
+                    
+                    # Save policy
+                    st.session_state.policies[policy_name] = policy
+                    st.success(f"Policy '{policy_name}' created successfully!")
+    
+    with tab3:
+        st.subheader("Edit Existing Policy")
+        
+        if st.session_state.policies:
+            policy_names = list(st.session_state.policies.keys())
+            selected_policy = st.selectbox("Choose a policy to edit", policy_names, key="edit_policy")
+            
+            if selected_policy:
+                policy = st.session_state.policies[selected_policy]
+                
+                # Display current policy for editing
+                st.write("**Current Policy Settings**")
+                
+                # Allow editing of key parameters
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    new_risk_tolerance = st.selectbox("Risk Tolerance", ["low", "medium", "high"], 
+                                                    index=["low", "medium", "high"].index(policy['client_profile']['risk_tolerance']))
+                    new_target_return = st.number_input("Target Return (%)", 
+                                                      value=policy['return_requirements']['target_return'] * 100,
+                                                      min_value=0.0, max_value=30.0, step=0.1)
+                
+                with col2:
+                    new_max_drawdown = st.number_input("Max Drawdown (%)", 
+                                                     value=policy['risk_constraints']['max_drawdown'] * 100,
+                                                     min_value=1.0, max_value=50.0, step=0.1)
+                    new_max_volatility = st.number_input("Max Volatility (%)", 
+                                                        value=policy['risk_constraints']['max_volatility'] * 100,
+                                                        min_value=1.0, max_value=50.0, step=0.1)
+                
+                if st.button("Update Policy"):
+                    # Update policy
+                    policy['client_profile']['risk_tolerance'] = new_risk_tolerance
+                    policy['return_requirements']['target_return'] = new_target_return / 100
+                    policy['risk_constraints']['max_drawdown'] = new_max_drawdown / 100
+                    policy['risk_constraints']['max_volatility'] = new_max_volatility / 100
+                    
+                    st.session_state.policies[selected_policy] = policy
+                    st.success(f"Policy '{selected_policy}' updated successfully!")
+        else:
+            st.warning("No policies available to edit.")
+
+def load_existing_policies():
+    """Load existing policy templates."""
+    import os
+    import yaml
+    
+    policy_dir = "configs/policy.examples"
+    if os.path.exists(policy_dir):
+        for filename in os.listdir(policy_dir):
+            if filename.endswith('.yaml'):
+                policy_name = filename.replace('.yaml', '').replace('_', ' ').title()
+                try:
+                    with open(os.path.join(policy_dir, filename), 'r') as f:
+                        policy = yaml.safe_load(f)
+                        st.session_state.policies[policy_name] = policy
+                except Exception as e:
+                    st.error(f"Error loading policy {filename}: {e}")
 
 def portfolio_optimization_page():
     """Portfolio optimization page."""
@@ -153,20 +381,76 @@ def portfolio_optimization_page():
         st.warning("Please load data first before optimizing.")
         return
     
+    # Policy selection
+    st.subheader("Investment Policy")
+    
+    # Load policies if not already loaded
+    if 'policies' not in st.session_state:
+        st.session_state.policies = {}
+    load_existing_policies()
+    
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        if st.session_state.policies:
+            policy_names = ["Custom Settings"] + list(st.session_state.policies.keys())
+            selected_policy_name = st.selectbox("Select Policy", policy_names)
+            
+            if selected_policy_name != "Custom Settings":
+                selected_policy = st.session_state.policies[selected_policy_name]
+                st.session_state.selected_policy = selected_policy
+                
+                # Display policy summary
+                st.info(f"**{selected_policy_name}**: {selected_policy['client_profile']['risk_tolerance'].title()} risk tolerance, "
+                       f"Target: {selected_policy['return_requirements']['target_return']*100:.1f}%, "
+                       f"Max DD: {selected_policy['risk_constraints']['max_drawdown']*100:.1f}%")
+        else:
+            selected_policy_name = "Custom Settings"
+            st.warning("No policies available. Using custom settings.")
+    
+    with col2:
+        if st.button("Manage Policies"):
+            st.session_state.page = "Policy Management"
+            st.rerun()
+    
     # Optimization parameters
     st.subheader("Optimization Parameters")
+    
+    # Apply policy settings if policy is selected
+    if selected_policy_name != "Custom Settings" and 'selected_policy' in st.session_state:
+        policy = st.session_state.selected_policy
+        
+        # Pre-fill parameters based on policy
+        default_theta = 0.02
+        default_min_weight = 0.0
+        default_max_weight = policy.get('additional_constraints', {}).get('max_single_weight', 1.0)
+        default_turnover_penalty = 0.0
+        
+        # Risk constraints from policy
+        policy_max_vol = policy.get('risk_constraints', {}).get('max_volatility', None)
+        policy_max_dd = policy.get('risk_constraints', {}).get('max_drawdown', None)
+        policy_cvar_cap = policy.get('risk_constraints', {}).get('cvar_confidence', None)
+    else:
+        # Default values for custom settings
+        default_theta = 0.02
+        default_min_weight = 0.0
+        default_max_weight = 1.0
+        default_turnover_penalty = 0.0
+        policy_max_vol = None
+        policy_max_dd = None
+        policy_cvar_cap = None
     
     col1, col2 = st.columns(2)
     
     with col1:
         objective = st.selectbox("Objective", ["gmv", "omega"])
-        theta = st.number_input("Omega Theta", value=0.02, min_value=0.0, max_value=0.1, step=0.01)
+        theta = st.number_input("Omega Theta", value=default_theta, min_value=0.0, max_value=0.1, step=0.01)
         long_only = st.checkbox("Long Only", value=True)
     
     with col2:
-        min_weight = st.number_input("Min Weight", value=0.0, min_value=0.0, max_value=1.0, step=0.01)
-        max_weight = st.number_input("Max Weight", value=1.0, min_value=0.0, max_value=1.0, step=0.01)
-        turnover_penalty = st.number_input("Turnover Penalty", value=0.0, min_value=0.0, step=0.001)
+        min_weight = st.number_input("Min Weight", value=default_min_weight, min_value=0.0, max_value=1.0, step=0.01)
+        max_weight = st.number_input("Max Weight", value=default_max_weight, min_value=0.0, max_value=1.0, step=0.01)
+        turnover_penalty = st.number_input("Turnover Penalty", value=default_turnover_penalty, min_value=0.0, step=0.001)
     
     # Risk constraints
     st.subheader("Risk Constraints")
@@ -174,12 +458,12 @@ def portfolio_optimization_page():
     col1, col2 = st.columns(2)
     
     with col1:
-        cvar_cap = st.number_input("CVaR Cap", value=None, min_value=0.0, max_value=1.0, step=0.01)
-        max_volatility = st.number_input("Max Volatility", value=None, min_value=0.0, max_value=1.0, step=0.01)
+        cvar_cap = st.number_input("CVaR Cap", value=policy_cvar_cap, min_value=0.0, max_value=1.0, step=0.01)
+        max_volatility = st.number_input("Max Volatility", value=policy_max_vol, min_value=0.0, max_value=1.0, step=0.01)
     
     with col2:
-        max_drawdown = st.number_input("Max Drawdown", value=None, min_value=0.0, max_value=1.0, step=0.01)
-        max_single_weight = st.number_input("Max Single Weight", value=None, min_value=0.0, max_value=1.0, step=0.01)
+        max_drawdown = st.number_input("Max Drawdown", value=policy_max_dd, min_value=0.0, max_value=1.0, step=0.01)
+        max_single_weight = st.number_input("Max Single Weight", value=default_max_weight, min_value=0.0, max_value=1.0, step=0.01)
     
     # Run optimization
     if st.button("Optimize Portfolio"):
@@ -318,6 +602,38 @@ def backtesting_page():
     if st.session_state.backtest_returns_df is None:
         st.warning("Please load data first before running backtest.")
         return
+    
+    # Policy selection
+    st.subheader("Investment Policy")
+    
+    # Load policies if not already loaded
+    if 'policies' not in st.session_state:
+        st.session_state.policies = {}
+    load_existing_policies()
+    
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        if st.session_state.policies:
+            policy_names = ["Custom Settings"] + list(st.session_state.policies.keys())
+            selected_policy_name = st.selectbox("Select Policy", policy_names, key="backtest_policy")
+            
+            if selected_policy_name != "Custom Settings":
+                selected_policy = st.session_state.policies[selected_policy_name]
+                st.session_state.selected_backtest_policy = selected_policy
+                
+                # Display policy summary
+                st.info(f"**{selected_policy_name}**: {selected_policy['client_profile']['risk_tolerance'].title()} risk tolerance, "
+                       f"Target: {selected_policy['return_requirements']['target_return']*100:.1f}%, "
+                       f"Max DD: {selected_policy['risk_constraints']['max_drawdown']*100:.1f}%")
+        else:
+            selected_policy_name = "Custom Settings"
+            st.warning("No policies available. Using custom settings.")
+    
+    with col2:
+        if st.button("Manage Policies", key="backtest_manage_policies"):
+            st.session_state.page = "Policy Management"
+            st.rerun()
     
     # Backtest parameters
     st.subheader("Backtest Parameters")
