@@ -2,7 +2,7 @@
 Pydantic schemas for the Omega Portfolio Engine API.
 """
 
-from typing import Dict, List, Optional, Union, Any
+from typing import Dict, List, Optional, Union, Any, Tuple
 from datetime import datetime
 from pydantic import BaseModel, Field, validator
 import pandas as pd
