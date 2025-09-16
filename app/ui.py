@@ -90,6 +90,10 @@ def portfolio_optimization_page():
     st.header("Portfolio Optimization")
     st.markdown("Optimize portfolio weights using GMV or Omega ratio objectives.")
     
+    # Initialize session state for returns data
+    if 'returns_df' not in st.session_state:
+        st.session_state.returns_df = None
+    
     # Data input
     st.subheader("Data Input")
     
@@ -98,29 +102,31 @@ def portfolio_optimization_page():
     
     if data_source == "Sample Data":
         # Generate sample data
-        np.random.seed(42)
-        n_assets = 5
-        n_days = 252
+        if st.button("Generate Sample Data"):
+            np.random.seed(42)
+            n_assets = 5
+            n_days = 252
+            
+            # Generate sample returns
+            returns = np.random.normal(0.0005, 0.02, (n_days, n_assets))
+            asset_names = [f"Asset_{i+1}" for i in range(n_assets)]
+            dates = pd.date_range(start="2023-01-01", periods=n_days, freq="D")
+            
+            st.session_state.returns_df = pd.DataFrame(returns, columns=asset_names, index=dates)
+            st.success("Sample data generated!")
         
-        # Generate sample returns
-        returns = np.random.normal(0.0005, 0.02, (n_days, n_assets))
-        asset_names = [f"Asset_{i+1}" for i in range(n_assets)]
-        dates = pd.date_range(start="2023-01-01", periods=n_days, freq="D")
-        
-        returns_df = pd.DataFrame(returns, columns=asset_names, index=dates)
-        
-        st.write("Sample Returns Data:")
-        st.dataframe(returns_df.head())
+        if st.session_state.returns_df is not None:
+            st.write("Sample Returns Data:")
+            st.dataframe(st.session_state.returns_df.head())
         
     elif data_source == "Upload Data":
         uploaded_file = st.file_uploader("Upload CSV file", type=["csv"])
         if uploaded_file is not None:
-            returns_df = pd.read_csv(uploaded_file, index_col=0, parse_dates=True)
+            st.session_state.returns_df = pd.read_csv(uploaded_file, index_col=0, parse_dates=True)
             st.write("Uploaded Returns Data:")
-            st.dataframe(returns_df.head())
+            st.dataframe(st.session_state.returns_df.head())
         else:
             st.warning("Please upload a CSV file")
-            return
             
     elif data_source == "Yahoo Finance":
         # Yahoo Finance input
@@ -136,12 +142,16 @@ def portfolio_optimization_page():
         if st.button("Download Data"):
             try:
                 ticker_list = [t.strip() for t in tickers.split(",")]
-                returns_df = download_yahoo_data(ticker_list, start_date, end_date)
+                st.session_state.returns_df = download_yahoo_data(ticker_list, start_date, end_date)
                 st.write("Downloaded Returns Data:")
-                st.dataframe(returns_df.head())
+                st.dataframe(st.session_state.returns_df.head())
             except Exception as e:
                 st.error(f"Error downloading data: {str(e)}")
-                return
+    
+    # Check if we have data
+    if st.session_state.returns_df is None:
+        st.warning("Please load data first before optimizing.")
+        return
     
     # Optimization parameters
     st.subheader("Optimization Parameters")
@@ -176,9 +186,9 @@ def portfolio_optimization_page():
         try:
             # Prepare request
             request_data = {
-                "returns": returns_df.values.tolist(),
-                "asset_names": returns_df.columns.tolist(),
-                "dates": returns_df.index.strftime("%Y-%m-%d").tolist(),
+                "returns": st.session_state.returns_df.values.tolist(),
+                "asset_names": st.session_state.returns_df.columns.tolist(),
+                "dates": st.session_state.returns_df.index.strftime("%Y-%m-%d").tolist(),
                 "objective": objective,
                 "theta": theta,
                 "bounds": (min_weight, max_weight),
@@ -246,6 +256,10 @@ def backtesting_page():
     st.header("Portfolio Backtesting")
     st.markdown("Run walk-forward backtests to evaluate portfolio performance.")
     
+    # Initialize session state for returns data
+    if 'backtest_returns_df' not in st.session_state:
+        st.session_state.backtest_returns_df = None
+    
     # Data input (similar to optimization page)
     st.subheader("Data Input")
     
@@ -254,29 +268,31 @@ def backtesting_page():
     
     if data_source == "Sample Data":
         # Generate sample data
-        np.random.seed(42)
-        n_assets = 5
-        n_days = 1000  # More data for backtesting
+        if st.button("Generate Sample Data"):
+            np.random.seed(42)
+            n_assets = 5
+            n_days = 1000  # More data for backtesting
+            
+            # Generate sample returns
+            returns = np.random.normal(0.0005, 0.02, (n_days, n_assets))
+            asset_names = [f"Asset_{i+1}" for i in range(n_assets)]
+            dates = pd.date_range(start="2020-01-01", periods=n_days, freq="D")
+            
+            st.session_state.backtest_returns_df = pd.DataFrame(returns, columns=asset_names, index=dates)
+            st.success("Sample data generated!")
         
-        # Generate sample returns
-        returns = np.random.normal(0.0005, 0.02, (n_days, n_assets))
-        asset_names = [f"Asset_{i+1}" for i in range(n_assets)]
-        dates = pd.date_range(start="2020-01-01", periods=n_days, freq="D")
-        
-        returns_df = pd.DataFrame(returns, columns=asset_names, index=dates)
-        
-        st.write("Sample Returns Data:")
-        st.dataframe(returns_df.head())
+        if st.session_state.backtest_returns_df is not None:
+            st.write("Sample Returns Data:")
+            st.dataframe(st.session_state.backtest_returns_df.head())
         
     elif data_source == "Upload Data":
         uploaded_file = st.file_uploader("Upload CSV file", type=["csv"])
         if uploaded_file is not None:
-            returns_df = pd.read_csv(uploaded_file, index_col=0, parse_dates=True)
+            st.session_state.backtest_returns_df = pd.read_csv(uploaded_file, index_col=0, parse_dates=True)
             st.write("Uploaded Returns Data:")
-            st.dataframe(returns_df.head())
+            st.dataframe(st.session_state.backtest_returns_df.head())
         else:
             st.warning("Please upload a CSV file")
-            return
             
     elif data_source == "Yahoo Finance":
         # Yahoo Finance input
@@ -292,12 +308,16 @@ def backtesting_page():
         if st.button("Download Data"):
             try:
                 ticker_list = [t.strip() for t in tickers.split(",")]
-                returns_df = download_yahoo_data(ticker_list, start_date, end_date)
+                st.session_state.backtest_returns_df = download_yahoo_data(ticker_list, start_date, end_date)
                 st.write("Downloaded Returns Data:")
-                st.dataframe(returns_df.head())
+                st.dataframe(st.session_state.backtest_returns_df.head())
             except Exception as e:
                 st.error(f"Error downloading data: {str(e)}")
-                return
+    
+    # Check if we have data
+    if st.session_state.backtest_returns_df is None:
+        st.warning("Please load data first before running backtest.")
+        return
     
     # Backtest parameters
     st.subheader("Backtest Parameters")
@@ -332,9 +352,9 @@ def backtesting_page():
         try:
             # Prepare request
             request_data = {
-                "returns": returns_df.values.tolist(),
-                "asset_names": returns_df.columns.tolist(),
-                "dates": returns_df.index.strftime("%Y-%m-%d").tolist(),
+                "returns": st.session_state.backtest_returns_df.values.tolist(),
+                "asset_names": st.session_state.backtest_returns_df.columns.tolist(),
+                "dates": st.session_state.backtest_returns_df.index.strftime("%Y-%m-%d").tolist(),
                 "objective": objective,
                 "theta": theta,
                 "initial_capital": initial_capital,
@@ -414,6 +434,10 @@ def regime_detection_page():
     st.header("Market Regime Detection")
     st.markdown("Detect market regimes using HMM, LSTM, or GMM methods.")
     
+    # Initialize session state for features data
+    if 'features_df' not in st.session_state:
+        st.session_state.features_df = None
+    
     # Data input
     st.subheader("Data Input")
     
@@ -422,29 +446,31 @@ def regime_detection_page():
     
     if data_source == "Sample Data":
         # Generate sample data
-        np.random.seed(42)
-        n_features = 5
-        n_days = 1000
+        if st.button("Generate Sample Data"):
+            np.random.seed(42)
+            n_features = 5
+            n_days = 1000
+            
+            # Generate sample features
+            features = np.random.normal(0, 1, (n_days, n_features))
+            feature_names = [f"Feature_{i+1}" for i in range(n_features)]
+            dates = pd.date_range(start="2020-01-01", periods=n_days, freq="D")
+            
+            st.session_state.features_df = pd.DataFrame(features, columns=feature_names, index=dates)
+            st.success("Sample data generated!")
         
-        # Generate sample features
-        features = np.random.normal(0, 1, (n_days, n_features))
-        feature_names = [f"Feature_{i+1}" for i in range(n_features)]
-        dates = pd.date_range(start="2020-01-01", periods=n_days, freq="D")
-        
-        features_df = pd.DataFrame(features, columns=feature_names, index=dates)
-        
-        st.write("Sample Features Data:")
-        st.dataframe(features_df.head())
+        if st.session_state.features_df is not None:
+            st.write("Sample Features Data:")
+            st.dataframe(st.session_state.features_df.head())
         
     elif data_source == "Upload Data":
         uploaded_file = st.file_uploader("Upload CSV file", type=["csv"])
         if uploaded_file is not None:
-            features_df = pd.read_csv(uploaded_file, index_col=0, parse_dates=True)
+            st.session_state.features_df = pd.read_csv(uploaded_file, index_col=0, parse_dates=True)
             st.write("Uploaded Features Data:")
-            st.dataframe(features_df.head())
+            st.dataframe(st.session_state.features_df.head())
         else:
             st.warning("Please upload a CSV file")
-            return
             
     elif data_source == "Yahoo Finance":
         # Yahoo Finance input
@@ -463,12 +489,16 @@ def regime_detection_page():
                 returns_df = download_yahoo_data(ticker_list, start_date, end_date)
                 
                 # Calculate features
-                features_df = calculate_features(returns_df)
+                st.session_state.features_df = calculate_features(returns_df)
                 st.write("Calculated Features:")
-                st.dataframe(features_df.head())
+                st.dataframe(st.session_state.features_df.head())
             except Exception as e:
                 st.error(f"Error downloading data: {str(e)}")
-                return
+    
+    # Check if we have data
+    if st.session_state.features_df is None:
+        st.warning("Please load data first before detecting regimes.")
+        return
     
     # Model parameters
     st.subheader("Model Parameters")
@@ -495,9 +525,9 @@ def regime_detection_page():
         try:
             # Prepare request
             request_data = {
-                "features": features_df.values.tolist(),
-                "feature_names": features_df.columns.tolist(),
-                "dates": features_df.index.strftime("%Y-%m-%d").tolist(),
+                "features": st.session_state.features_df.values.tolist(),
+                "feature_names": st.session_state.features_df.columns.tolist(),
+                "dates": st.session_state.features_df.index.strftime("%Y-%m-%d").tolist(),
                 "method": method,
                 "n_regimes": int(n_regimes),
                 "random_state": int(random_state)
