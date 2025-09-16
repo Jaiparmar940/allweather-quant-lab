@@ -2,16 +2,20 @@
 
 A regime-aware, client-customizable portfolio optimization engine that detects market regimes and optimizes portfolios for Global Minimum Variance and Omega ratio objectives.
 
+> **🚀 Quick Start**: Run `make start` and open `http://localhost:8501` to access the web interface!
+
 ## Features
 
-- **Regime Detection**: HMM, LSTM, and GMM-based market regime detection
-- **Portfolio Optimization**: GMV and Omega ratio optimization with constraints
-- **Walk-Forward Backtesting**: Comprehensive backtesting with transaction costs and slippage
-- **Risk Management**: CVaR constraints, turnover penalties, and sector limits
-- **Client Customization**: Flexible policy-based constraints and objectives
-- **Benchmarking**: Comparison against Bridgewater's All Weather ETF (ALLW)
-- **Reporting**: Automated PDF client memos and interactive charts
-- **API & UI**: FastAPI backend and Streamlit frontend
+- **🌐 Web Interface**: Modern, interactive web application for easy portfolio management
+- **📊 Portfolio Optimization**: GMV and Omega ratio optimization with real-time results
+- **🔄 Walk-Forward Backtesting**: Comprehensive backtesting with performance analysis
+- **🎯 Regime Detection**: HMM, LSTM, and GMM-based market regime detection
+- **⚙️ Policy Management**: Create, edit, and apply custom investment policies
+- **📈 Results Dashboard**: Centralized view of all optimization and backtest results
+- **💰 Risk Management**: CVaR constraints, turnover penalties, and sector limits
+- **📊 Data Integration**: Yahoo Finance, CSV upload, and sample data support
+- **🎨 Interactive Charts**: Real-time visualizations and performance metrics
+- **🔧 API & CLI**: FastAPI backend and command-line interface for advanced users
 
 ## Quick Start
 
@@ -22,11 +26,12 @@ A regime-aware, client-customizable portfolio optimization engine that detects m
 git clone <repository-url>
 cd omega
 
+# Create virtual environment
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
 # Install dependencies
 pip install -e .
-
-# Install with optional dependencies
-pip install -e ".[api,ui]"
 ```
 
 ### Configuration
@@ -36,25 +41,41 @@ pip install -e ".[api,ui]"
 cp env.example .env
 ```
 
-2. Set your API keys in `.env`:
+2. Set your API keys in `.env` (optional for basic usage):
 ```bash
 FRED_API_KEY=your_fred_api_key_here
 QUANDL_API_KEY=your_quandl_api_key_here
 ```
 
-### Running the Application
+### 🌐 **Preferred Way: Web Application**
 
-#### API Server
+The easiest way to use the Omega Portfolio Engine is through the web interface:
+
 ```bash
-# Start the FastAPI server
-python -m api.main
+# One command to start everything
+make start
 ```
 
-#### Streamlit UI
+This will start both the API server and web UI. Then open your browser to: **http://localhost:8501**
+
+#### Alternative: Manual Startup
 ```bash
-# Start the Streamlit UI
+# Terminal 1: Start API server
+python -m api.main
+
+# Terminal 2: Start web UI
 streamlit run app/ui.py
 ```
+
+#### Web Interface Features:
+- **Portfolio Optimization**: Interactive GMV and Omega ratio optimization
+- **Backtesting**: Walk-forward backtesting with performance analysis  
+- **Regime Detection**: Market regime detection using HMM, LSTM, or GMM
+- **Policy Management**: Create and manage custom investment policies
+- **Results Dashboard**: View and analyze all optimization and backtest results
+- **Data Sources**: Yahoo Finance integration, CSV upload, or sample data
+
+### Alternative: Command Line
 
 #### Demo
 ```bash
@@ -62,7 +83,49 @@ streamlit run app/ui.py
 make demo
 ```
 
-## Usage
+#### API Only
+```bash
+# Start just the API server
+python -m api.main
+```
+
+## 🌐 Web Interface Usage
+
+The easiest way to use the Omega Portfolio Engine is through the web interface at `http://localhost:8501`:
+
+### 1. Portfolio Optimization
+- **Data Sources**: Choose from Yahoo Finance, CSV upload, or sample data
+- **Policy Selection**: Select from pre-built policies or create custom ones
+- **Optimization**: Run GMV or Omega ratio optimization with real-time results
+- **Visualization**: Interactive charts showing portfolio allocation and performance
+
+### 2. Backtesting
+- **Walk-Forward Analysis**: Comprehensive backtesting with rolling windows
+- **Performance Metrics**: Sharpe ratio, max drawdown, VaR, CVaR, and more
+- **Performance Charts**: Interactive performance history and cumulative returns
+- **Policy Integration**: Apply investment policies to backtesting
+
+### 3. Regime Detection
+- **Multiple Methods**: HMM, LSTM, or GMM-based regime detection
+- **Feature Engineering**: Automatic feature extraction from market data
+- **Visualization**: Regime labels and transition probabilities
+- **Integration**: Use regime information in optimization and backtesting
+
+### 4. Policy Management
+- **Create Policies**: Build custom investment policies with full control
+- **Template Library**: Choose from Conservative, Balanced, and Aggressive templates
+- **Edit Policies**: Modify existing policies to match client needs
+- **Apply Policies**: Use policies across optimization and backtesting
+
+### 5. Results Dashboard
+- **Centralized Results**: View all optimization and backtesting results
+- **Filtering**: Filter by type, objective, policy, or date
+- **Analysis**: Detailed performance metrics and visualizations
+- **Export**: Save results for further analysis
+
+## 🔧 Command Line Usage
+
+For advanced users or programmatic access:
 
 ### Basic Portfolio Optimization
 
@@ -242,6 +305,26 @@ Install pre-commit hooks:
 ```bash
 pre-commit install
 ```
+
+## 🆕 Recent Updates
+
+### Web Interface Enhancements
+- **Results Storage**: All optimization and backtest results are now stored and displayed in a centralized dashboard
+- **Policy Management**: Create, edit, and apply custom investment policies with full UI support
+- **Navigation Fixes**: Improved navigation between pages with proper state management
+- **Data Integration**: Seamless Yahoo Finance data integration with error handling
+- **Interactive Charts**: Real-time portfolio allocation and performance visualizations
+
+### Backend Improvements
+- **Fallback Logic**: Robust backtesting with fallback to simple optimization when walk-forward fails
+- **Error Handling**: Better error messages and logging throughout the system
+- **API Stability**: Improved API reliability and response handling
+- **Session Management**: Proper session state management for web interface
+
+### Developer Experience
+- **Easy Startup**: `make start` command to launch both API and UI with one command
+- **Better Documentation**: Updated README with clear usage instructions
+- **Code Quality**: Improved error handling and logging throughout
 
 ## Project Structure
 
