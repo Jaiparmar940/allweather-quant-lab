@@ -28,17 +28,7 @@ install-dev:
 
 # Start web application
 start:
-	@echo "Starting Omega Portfolio Engine web application..."
-	@echo "API will be available at: http://localhost:8000"
-	@echo "Web UI will be available at: http://localhost:8501"
-	@echo "Press Ctrl+C to stop both services"
-	@echo ""
-	@echo "Starting API server in background..."
-	@python -m api.main &
-	@echo "Waiting for API to start..."
-	@sleep 3
-	@echo "Starting web UI..."
-	@streamlit run app/ui.py --server.port 8501 --server.address 0.0.0.0
+	@source venv/bin/activate && python start_app.py
 
 # Testing
 test:

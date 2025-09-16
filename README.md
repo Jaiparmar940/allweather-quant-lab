@@ -51,21 +51,24 @@ QUANDL_API_KEY=your_quandl_api_key_here
 
 The easiest way to use the Omega Portfolio Engine is through the web interface:
 
+#### Option 1: Automated Startup (Recommended)
 ```bash
 # One command to start everything
 make start
 ```
 
-This will start both the API server and web UI. Then open your browser to: **http://localhost:8501**
-
-#### Alternative: Manual Startup
+#### Option 2: Manual Startup
 ```bash
 # Terminal 1: Start API server
-python -m api.main
+source venv/bin/activate && python -m api.main
 
-# Terminal 2: Start web UI
-streamlit run app/ui.py
+# Terminal 2: Start web UI  
+source venv/bin/activate && streamlit run app/ui.py
 ```
+
+Then open your browser to: **http://localhost:8501**
+
+> **Note**: If the automated startup doesn't work, use the manual startup method above.
 
 #### Web Interface Features:
 - **Portfolio Optimization**: Interactive GMV and Omega ratio optimization
