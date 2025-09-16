@@ -1,0 +1,68 @@
+# Universe configuration for portfolio optimization
+# Defines the investable universe of assets
+
+# Asset categories and their tickers
+assets:
+  # US Equities
+  us_equity:
+    - VTI    # Vanguard Total Stock Market ETF
+    - SPY    # SPDR S&P 500 ETF Trust
+    - QQQ    # Invesco QQQ Trust
+    - IWM    # iShares Russell 2000 ETF
+    - VEA    # Vanguard FTSE Developed Markets ETF
+    - VWO    # Vanguard FTSE Emerging Markets ETF
+
+  # Fixed Income
+  fixed_income:
+    - SHY    # iShares 1-3 Year Treasury Bond ETF
+    - IEF    # iShares 7-10 Year Treasury Bond ETF
+    - TLT    # iShares 20+ Year Treasury Bond ETF
+    - TIP    # iShares TIPS Bond ETF
+    - SHV    # iShares Short Treasury Bond ETF
+    - SGOV   # iShares 0-3 Month Treasury Bond ETF
+
+  # Commodities
+  commodities:
+    - GLD    # SPDR Gold Shares
+    - SLV    # iShares Silver Trust
+    - DJP    # iPath Bloomberg Commodity Index Total Return ETN
+    - DBC    # Invesco DB Commodity Index Tracking Fund
+
+  # Alternative/Real Estate
+  alternatives:
+    - VNQ    # Vanguard Real Estate ETF
+    - VNQI   # Vanguard Global ex-U.S. Real Estate ETF
+
+# Sector constraints (optional)
+sectors:
+  technology:
+    - QQQ
+    - VGT    # Vanguard Information Technology ETF
+  healthcare:
+    - VHT    # Vanguard Health Care ETF
+  financials:
+    - VFH    # Vanguard Financials ETF
+  energy:
+    - VDE    # Vanguard Energy ETF
+
+# Liquidity requirements
+liquidity:
+  min_adv_usd: 10000000  # Minimum average daily volume in USD
+  min_market_cap_usd: 1000000000  # Minimum market cap in USD
+
+# Rebalancing schedule
+rebalancing:
+  frequency: monthly  # monthly, quarterly, semi-annual, annual
+  day_of_month: 1     # 1-31, or 'last' for last day of month
+
+# Data sources
+data_sources:
+  price_data: yfinance
+  macro_data: fred
+  fundamental_data: quandl
+
+# Universe freeze policy
+universe_freeze:
+  # Freeze universe at year-end for next year
+  freeze_date: "12-31"  # MM-DD format
+  lookback_years: 1     # Years to look back for universe selection

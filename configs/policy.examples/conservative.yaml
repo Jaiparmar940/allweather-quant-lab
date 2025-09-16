@@ -1,0 +1,124 @@
+# Conservative client policy
+# Suitable for risk-averse investors seeking capital preservation
+
+client_profile:
+  name: "Conservative Investor"
+  risk_tolerance: "low"
+  investment_horizon: "long_term"
+  liquidity_needs: "low"
+
+# Return requirements
+return_requirements:
+  minimum_acceptable_return: 0.02  # 2% annual minimum
+  target_return: 0.04              # 4% annual target
+  return_currency: "real"          # real or nominal
+
+# Risk constraints
+risk_constraints:
+  max_drawdown: 0.10               # 10% maximum drawdown
+  max_volatility: 0.08             # 8% maximum annual volatility
+  var_confidence: 0.95             # 95% VaR confidence level
+  cvar_confidence: 0.95            # 95% CVaR confidence level
+
+# Asset allocation constraints
+asset_constraints:
+  # Fixed income allocation
+  min_fixed_income: 0.60           # Minimum 60% fixed income
+  max_fixed_income: 0.80           # Maximum 80% fixed income
+  
+  # Equity allocation
+  min_equity: 0.15                 # Minimum 15% equity
+  max_equity: 0.35                 # Maximum 35% equity
+  
+  # Commodity allocation
+  min_commodities: 0.00            # Minimum 0% commodities
+  max_commodities: 0.10            # Maximum 10% commodities
+  
+  # Cash allocation
+  min_cash: 0.05                   # Minimum 5% cash
+  max_cash: 0.15                   # Maximum 15% cash
+
+# Sector constraints
+sector_constraints:
+  # Technology sector
+  max_technology: 0.15             # Maximum 15% technology
+  
+  # Financial sector
+  max_financials: 0.20             # Maximum 20% financials
+  
+  # Energy sector
+  max_energy: 0.10                 # Maximum 10% energy
+  
+  # Healthcare sector
+  max_healthcare: 0.20             # Maximum 20% healthcare
+
+# Geographic constraints
+geographic_constraints:
+  # US allocation
+  min_us: 0.40                     # Minimum 40% US
+  max_us: 0.70                     # Maximum 70% US
+  
+  # Developed markets ex-US
+  min_dm_ex_us: 0.15               # Minimum 15% DM ex-US
+  max_dm_ex_us: 0.30               # Maximum 30% DM ex-US
+  
+  # Emerging markets
+  min_em: 0.00                     # Minimum 0% EM
+  max_em: 0.10                     # Maximum 10% EM
+
+# ESG constraints
+esg_constraints:
+  enabled: false                   # ESG screening disabled
+  min_esg_score: 0.0               # Minimum ESG score (0-100)
+  exclude_controversial: false     # Exclude controversial companies
+  exclude_sectors: []              # Excluded sectors (empty list)
+
+# Liquidity constraints
+liquidity_constraints:
+  min_liquidity_ratio: 0.10        # Minimum 10% liquid assets
+  max_illiquid_weight: 0.05        # Maximum 5% illiquid assets
+  min_adv_usd: 5000000             # Minimum $5M average daily volume
+
+# Turnover constraints
+turnover_constraints:
+  max_annual_turnover: 0.20        # Maximum 20% annual turnover
+  turnover_penalty: 0.001          # Turnover penalty coefficient
+
+# Tax considerations
+tax_settings:
+  tax_aware: true                  # Enable tax-aware optimization
+  account_type: "taxable"          # taxable or tax_advantaged
+  tax_rate_short: 0.37             # Short-term capital gains rate
+  tax_rate_long: 0.20              # Long-term capital gains rate
+  tax_rate_dividend: 0.20          # Dividend tax rate
+  lot_method: "HIFO"               # HIFO, FIFO, LIFO, Average
+
+# Optimization preferences
+optimization:
+  primary_objective: "gmv"         # gmv, omega, or custom
+  omega_theta: 0.02                # Omega threshold (2%)
+  cvar_constraint: true            # Enable CVaR constraint
+  cvar_alpha: 0.05                 # CVaR confidence level
+  cvar_cap: 0.03                   # CVaR cap (3%)
+  
+  # Regime awareness
+  regime_aware: true               # Enable regime detection
+  regime_switching: true           # Allow objective switching by regime
+  
+  # Benchmark blending
+  benchmark_blend: false           # Disable benchmark blending
+  benchmark_weight: 0.0            # Benchmark weight (0-1)
+
+# Rebalancing preferences
+rebalancing:
+  frequency: "quarterly"           # monthly, quarterly, semi-annual, annual
+  tolerance: 0.02                  # 2% tolerance before rebalancing
+  min_trade_size: 0.005            # 0.5% minimum trade size
+
+# Reporting preferences
+reporting:
+  frequency: "quarterly"           # quarterly, semi-annual, annual
+  include_attribution: true        # Include attribution analysis
+  include_regime_analysis: true    # Include regime analysis
+  include_risk_analysis: true      # Include risk analysis
+  include_esg_analysis: false      # Include ESG analysis

@@ -1,0 +1,125 @@
+# Backtesting configuration
+
+# Walk-forward parameters
+walk_forward:
+  train_months: 120      # Training window in months
+  test_months: 12        # Test window in months
+  step_months: 1         # Step size in months
+  min_train_months: 60   # Minimum training window
+  max_train_months: 240  # Maximum training window
+
+# Rebalancing
+rebalancing:
+  frequency: monthly     # monthly, quarterly, semi-annual, annual
+  day_of_month: 1       # 1-31, or 'last' for last day of month
+  lookahead_bias: false # Ensure no lookahead bias
+
+# Transaction costs
+transaction_costs:
+  # Cost structure
+  cost_bps: 5.0         # Base cost in basis points
+  slippage_bps: 2.0     # Slippage in basis points
+  
+  # Cost models
+  linear_cost: true     # Linear cost model
+  quadratic_cost: false # Quadratic cost model (market impact)
+  
+  # Minimum trade size
+  min_trade_size: 0.001  # Minimum trade size (0.1% of portfolio)
+
+# Tax considerations
+tax_settings:
+  tax_aware: false      # Enable tax-aware optimization
+  tax_rate_short: 0.37  # Short-term capital gains rate
+  tax_rate_long: 0.20   # Long-term capital gains rate
+  tax_rate_dividend: 0.20 # Dividend tax rate
+  lot_method: "HIFO"    # HIFO, FIFO, LIFO, Average
+
+# Risk management
+risk_management:
+  # Position limits
+  max_position_weight: 0.20    # Maximum single position weight
+  min_position_weight: 0.001   # Minimum position weight
+  max_sector_weight: 0.40      # Maximum sector weight
+  
+  # Drawdown limits
+  max_drawdown: 0.20           # Maximum acceptable drawdown
+  stop_loss: false             # Enable stop-loss
+  stop_loss_threshold: 0.10    # Stop-loss threshold
+  
+  # Leverage
+  max_leverage: 1.0            # Maximum leverage (1.0 = no leverage)
+  long_only: true              # Long-only constraint
+
+# Benchmark settings
+benchmark:
+  ticker: "ALLW"               # Bridgewater All Weather ETF
+  synthetic_fallback: true     # Use synthetic ALLW if ticker unavailable
+  blend_enabled: false         # Enable blending with benchmark
+  blend_weight: 0.0            # Weight of benchmark in blend (0-1)
+
+# Evaluation metrics
+evaluation:
+  # Return metrics
+  return_metrics:
+    - annualized_return
+    - annualized_volatility
+    - sharpe_ratio
+    - sortino_ratio
+    - calmar_ratio
+    - max_drawdown
+  
+  # Omega metrics
+  omega_ratios:
+    - 0.00  # Risk-free rate
+    - 0.02  # 2% threshold
+    - 0.04  # 4% threshold
+  
+  # Risk metrics
+  risk_metrics:
+    - var_95
+    - cvar_95
+    - downside_deviation
+    - tail_ratio
+  
+  # Turnover metrics
+  turnover_metrics:
+    - annual_turnover
+    - cost_drag
+    - tax_drag
+
+# Robustness testing
+robustness:
+  # Deflated Sharpe ratio
+  deflated_sharpe: true
+  
+  # Probability of Backtest Overfitting (PBO)
+  pbo_test: true
+  pbo_iterations: 1000
+  
+  # White-out periods around regime changes
+  whiteout_periods: true
+  whiteout_days: 30  # Days to white out around regime changes
+  
+  # Stress testing
+  stress_periods:
+    - "2008-01-01:2009-12-31"  # Financial crisis
+    - "2020-01-01:2021-12-31"  # COVID-19
+    - "2022-01-01:2023-12-31"  # Recent period
+
+# Output settings
+output:
+  # Results storage
+  results_path: "./results"
+  save_weights: true
+  save_returns: true
+  save_metrics: true
+  
+  # Report generation
+  generate_pdf: true
+  generate_charts: true
+  chart_formats: ["png", "html"]
+  
+  # MLflow integration
+  mlflow_tracking: true
+  experiment_name: "omega_portfolio_engine"

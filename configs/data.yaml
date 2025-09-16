@@ -1,0 +1,92 @@
+# Data configuration for portfolio engine
+
+# Data sources
+sources:
+  yfinance:
+    enabled: true
+    timeout: 30
+    retries: 3
+    cache_days: 1
+
+  fred:
+    enabled: true
+    api_key_env: FRED_API_KEY
+    timeout: 30
+    retries: 3
+    cache_days: 1
+
+  quandl:
+    enabled: false
+    api_key_env: QUANDL_API_KEY
+    timeout: 30
+    retries: 3
+    cache_days: 1
+
+# Data validation
+validation:
+  max_missing_pct: 0.05  # Max 5% missing data allowed
+  min_observations: 252   # Minimum observations (1 year of daily data)
+  outlier_threshold: 5.0  # Z-score threshold for outlier detection
+
+# Data processing
+processing:
+  # Price data adjustments
+  price_adjustments:
+    - dividends
+    - splits
+    - stock_dividends
+
+  # Return calculations
+  returns:
+    method: log  # log or simple
+    frequency: daily
+
+  # Missing data handling
+  missing_data:
+    method: forward_fill  # forward_fill, backward_fill, interpolate, drop
+    max_gap_days: 5
+
+# Macro indicators
+macro_indicators:
+  # Interest rates
+  interest_rates:
+    - DGS3MO    # 3-Month Treasury Bill
+    - DGS1      # 1-Year Treasury Rate
+    - DGS3      # 3-Year Treasury Rate
+    - DGS10     # 10-Year Treasury Rate
+    - DGS30     # 30-Year Treasury Rate
+
+  # Inflation
+  inflation:
+    - CPIAUCSL  # Consumer Price Index
+    - CPILFESL  # Core CPI
+    - T10YIE    # 10-Year Breakeven Inflation Rate
+
+  # Economic indicators
+  economic:
+    - UNRATE    # Unemployment Rate
+    - GDPC1     # Real GDP
+    - FEDFUNDS  # Federal Funds Rate
+
+  # Market indicators
+  market:
+    - VIXCLS    # VIX
+    - DEXUSEU   # USD/EUR Exchange Rate
+    - DEXJPUS   # USD/JPY Exchange Rate
+
+# Data storage
+storage:
+  raw_data_path: "./data/raw"
+  processed_data_path: "./data/processed"
+  interim_data_path: "./data/interim"
+  
+  # File formats
+  price_format: parquet
+  macro_format: parquet
+  metadata_format: json
+
+# Caching
+cache:
+  enabled: true
+  ttl_hours: 24
+  max_size_mb: 1000
